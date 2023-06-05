@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import { Component, NgZone, ViewChild } from '@angular/core';
-import { RowModel, SheetModel, SpreadsheetComponent } from '@syncfusion/ej2-angular-spreadsheet';
+import { RowModel, SheetModel, SpreadsheetComponent, Workbook } from '@syncfusion/ej2-angular-spreadsheet';
 import exportFromJSON from 'export-from-json';
+import * as XLSX from 'xlsx';
 
 import assetsResults from '../../../assets/results.json';
 import { ResultAnnotationType } from './spreadsheet.types';
@@ -87,6 +88,36 @@ export class CustomSpreadsheetComponent {
 
   async sleep(ms: number) {
     return new Promise((res) => setTimeout(res, ms));
+  }
+
+  async processAddXlsx(fileInput: any): Promise<void> {
+    const file: File = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (ev: ProgressEvent<FileReader>) => {
+      const workbook = XLSX.read(ev.target?.result, { type: 'binary' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data: Object[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+
+      if (data.length > 0) {
+        const cols = Object.keys(data[0]).map((key) => ({ value: key }));
+        const headerRow = { cells: cols };
+
+        const formedData = data.map((d) => ({
+          cells: Object.entries(d).map((dField) => ({ value: dField[1] }))
+        }));
+
+        this.ssObj?.insertSheet([
+          {
+            name: 'imported',
+            index: 0,
+            rows: [headerRow, ...formedData]
+          }
+        ]);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   }
 
   async processFile(fileInput: any): Promise<void> {

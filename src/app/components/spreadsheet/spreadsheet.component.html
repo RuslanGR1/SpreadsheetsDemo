@@ -22,6 +22,18 @@
     <div class="tools">
       <div class="file-wrapper">
         <input
+          #xlsxInput
+          type="file"
+          accept="*/*"
+          (change)="processAddXlsx(xlsxInput)"
+          id="xlsxInput"
+          onclick="this.value=null;"
+          hidden
+        />
+        <label class="btn" for="xlsxInput">Add xlsx sheet</label>
+      </div>
+      <div class="file-wrapper">
+        <input
           #imageInput
           type="file"
           accept="application/json"

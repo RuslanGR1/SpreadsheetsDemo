@@ -8,3 +8,4 @@
 @import '../node_modules/@syncfusion/ej2-dropdowns/styles/material.css';
 @import '../node_modules/@syncfusion/ej2-spreadsheet/styles/material.css';
 @import '../node_modules/@syncfusion/ej2-grids/styles/material.css';
+@import '~@ng-select/ng-select/themes/default.theme.css';

@@ -1,5 +1,57 @@
 <div class="wrapper">
-  <h1 class="page-header">Built-in Spreadsheets Demo</h1>
-  <ejs-spreadsheet #spreadsheet (created)="onCreate()" [openUrl]="openUrl" [saveUrl]="saveUrl" allowOpen="true">
+  <div>
+    <h1 class="page-header">Built-in Spreadsheets Demo</h1>
+    <div class="save-template-wrapper">
+      <ng-select [items]="sheets" bindLabel="name" [clearable]="false" bindValue="id" [(ngModel)]="selectedSheet">
+      </ng-select>
+      <button class="btn" (click)="saveButtonClick()">Save Report</button>
+      <div class="file-wrapper">
+        <input
+          #sheetInput
+          type="file"
+          accept="application/json"
+          (change)="processSheetFile(sheetInput)"
+          id="sheetInput"
+          onclick="this.value=null;"
+          hidden
+        />
+        <label class="btn" for="sheetInput">Upload Report</label>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="file-wrapper">
+        <input
+          #imageInput
+          type="file"
+          accept="application/json"
+          (change)="processFile(imageInput)"
+          id="imageInput"
+          onclick="this.value=null;"
+          hidden
+        />
+        <label class="btn" for="imageInput">Upload Raw Data</label>
+      </div>
+      <div class="hide-wrapper">
+        <input
+          (ngModel)="showRawDataSheets"
+          (change)="handleShowSheetsChange()"
+          [checked]="showRawDataSheets"
+          id="hide-input"
+          type="checkbox"
+        />
+        <label for="hide-input">Show raw data sheets</label>
+      </div>
+    </div>
+  </div>
+
+  <ejs-spreadsheet
+    #spreadsheet
+    (created)="onCreate()"
+    [activeSheetIndex]="activeSheetIndex"
+    [openUrl]="openUrl"
+    [saveUrl]="saveUrl"
+    allowOpen="true"
+  >
   </ejs-spreadsheet>
 </div>

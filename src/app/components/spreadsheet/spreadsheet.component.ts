@@ -95,7 +95,7 @@ export class CustomSpreadsheetComponent {
     const reader = new FileReader();
 
     reader.onload = (ev: ProgressEvent<FileReader>) => {
-      const workbook = XLSX.read(ev.target?.result, { type: 'binary' });
+      const workbook = XLSX.read(reader.result, { type: 'binary' });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const data: Object[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
 
@@ -185,23 +185,34 @@ export class CustomSpreadsheetComponent {
     if (!this.ssObj) {
       return;
     }
-    const baseSheets = this.types.map((type, index) => ({
-      id: index + 2,
-      index: index,
-      type: type,
-      name: this.service.getAnnotationNameByType(type),
-      ranges: [{ dataSource: this.service.getDataByType(type, results) }],
-      columns: [
-        { width: 50 },
-        { width: 170 },
-        { width: 120 },
-        { width: 120 },
-        { width: 120 },
-        { width: 120 },
-        { width: 120 },
-        { width: 120 }
-      ]
-    }));
+    const baseSheets = this.types.map((type, index) => {
+      const data = this.service.getDataByType(type, results);
+      const formedData = data.map((d) => ({
+        cells: Object.entries(d).map((dField) => ({ value: dField[1] }))
+      }));
+      const headerRow = {
+        cells: Object.entries(data[0]).map((dField) => ({ value: dField[0] }))
+      };
+
+      return {
+        id: index + 2,
+        index: index,
+        type: type,
+        name: this.service.getAnnotationNameByType(type),
+        ranges: [],
+        rows: [headerRow, ...formedData],
+        columns: [
+          { width: 50 },
+          { width: 170 },
+          { width: 120 },
+          { width: 120 },
+          { width: 120 },
+          { width: 120 },
+          { width: 120 },
+          { width: 120 }
+        ]
+      };
+    });
 
     this.ssObj.insertSheet(baseSheets);
     this.sheets = this.ssObj?.sheets.map((sheet) => <SheetSelect>{ id: sheet.id, name: sheet.name }) || [];

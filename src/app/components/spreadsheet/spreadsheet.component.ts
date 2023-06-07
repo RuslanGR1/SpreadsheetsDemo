@@ -22,6 +22,8 @@ interface SheetSelect {
 export class CustomSpreadsheetComponent {
   @ViewChild('spreadsheet') ssObj?: SpreadsheetComponent | undefined;
 
+  private readonly defaultPasswordForReadOnlySheets = '123';
+
   showRawDataSheets = true;
   saveUrl = REMOTE_SAVE_URL;
   openUrl = REMOTE_OPEN_URL;
@@ -201,6 +203,8 @@ export class CustomSpreadsheetComponent {
         name: this.service.getAnnotationNameByType(type),
         ranges: [],
         rows: [headerRow, ...formedData],
+        isProtected: true,
+        password: this.defaultPasswordForReadOnlySheets,
         columns: [
           { width: 50 },
           { width: 170 },
@@ -214,6 +218,7 @@ export class CustomSpreadsheetComponent {
       };
     });
 
+    this.ssObj.hideRibbonTabs(['Home', 'Insert', 'Formulas', 'Data', 'View']);
     this.ssObj.insertSheet(baseSheets);
     this.sheets = this.ssObj?.sheets.map((sheet) => <SheetSelect>{ id: sheet.id, name: sheet.name }) || [];
   }

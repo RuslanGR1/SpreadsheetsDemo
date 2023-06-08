@@ -54,6 +54,28 @@
         />
         <label for="hide-input">Show raw data sheets</label>
       </div>
+
+      <div class="hide-wrapper">
+        <input
+          (ngModel)="showRibbon"
+          (change)="handleToggleRibbon()"
+          [checked]="showRibbon"
+          id="hide-input"
+          type="checkbox"
+        />
+        <label for="hide-input">Show ribbon visibility</label>
+      </div>
+
+      <div class="hide-wrapper">
+        <input
+          (ngModel)="showFormula"
+          (change)="handleToggleFormula()"
+          [checked]="showFormula"
+          id="hide-input"
+          type="checkbox"
+        />
+        <label for="hide-input">Show formula visibility</label>
+      </div>
     </div>
   </div>
 

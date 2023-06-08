@@ -20,11 +20,14 @@ interface SheetSelect {
   styleUrls: ['./spreadsheet.component.css']
 })
 export class CustomSpreadsheetComponent {
-  @ViewChild('spreadsheet') ssObj?: SpreadsheetComponent | undefined;
+  @ViewChild('spreadsheet') spreadsheetObject?: SpreadsheetComponent | undefined;
 
   private readonly defaultPasswordForReadOnlySheets = '123';
 
   showRawDataSheets = true;
+  showRibbon = false;
+  showFormula = false;
+
   saveUrl = REMOTE_SAVE_URL;
   openUrl = REMOTE_OPEN_URL;
   activeSheetIndex: number = 0;
@@ -40,9 +43,34 @@ export class CustomSpreadsheetComponent {
     ResultAnnotationType.DOOR
   ];
 
+  private setInitialValues(): void {
+    if (!this.spreadsheetObject) {
+      return;
+    }
+
+    this.spreadsheetObject.showFormulaBar = this.showFormula;
+    this.spreadsheetObject.showRibbon = this.showRibbon;
+  }
+
+  handleToggleFormula(): void {
+    if (!this.spreadsheetObject) {
+      return;
+    }
+    this.showFormula = !this.showFormula;
+    this.spreadsheetObject.showFormulaBar = this.showFormula;
+  }
+
+  handleToggleRibbon(): void {
+    if (!this.spreadsheetObject) {
+      return;
+    }
+    this.showRibbon = !this.showRibbon;
+    this.spreadsheetObject.showRibbon = this.showRibbon;
+  }
+
   handleShowSheetsChange(): void {
     this.showRawDataSheets = !this.showRawDataSheets;
-    this.ssObj?.sheets.forEach((sheet) => {
+    this.spreadsheetObject?.sheets.forEach((sheet) => {
       const type = _.get(sheet, 'type');
       if (!type) {
         return;
@@ -53,11 +81,11 @@ export class CustomSpreadsheetComponent {
         sheet.state = 'Visible';
       }
     });
-    this.ssObj?.refresh();
+    this.spreadsheetObject?.refresh();
   }
 
   handleDataSheets(callback: (sheet: SheetModel) => void): void {
-    this.ssObj?.sheets.forEach((sheet) => {
+    this.spreadsheetObject?.sheets.forEach((sheet) => {
       const type = _.get(sheet, 'type');
       if (!type) {
         return;
@@ -72,16 +100,16 @@ export class CustomSpreadsheetComponent {
 
     reader.onload = (ev: ProgressEvent<FileReader>) => {
       const sheet = JSON.parse(<string>ev.target?.result);
-      if (!this.ssObj) {
+      if (!this.spreadsheetObject) {
         return;
       }
       this.zone.run(() => {
-        if (!this.ssObj) {
+        if (!this.spreadsheetObject) {
           return;
         }
         sheet.name = sheet.name + ' Imported';
         sheet.index = 0;
-        this.ssObj?.insertSheet([sheet]);
+        this.spreadsheetObject?.insertSheet([sheet]);
       });
     };
 
@@ -109,7 +137,7 @@ export class CustomSpreadsheetComponent {
           cells: Object.entries(d).map((dField) => ({ value: dField[1] }))
         }));
 
-        this.ssObj?.insertSheet([
+        this.spreadsheetObject?.insertSheet([
           {
             name: 'imported',
             index: 0,
@@ -128,11 +156,11 @@ export class CustomSpreadsheetComponent {
 
     reader.onload = async (ev: ProgressEvent<FileReader>) => {
       const importedResults = JSON.parse(<string>ev.target?.result);
-      if (!this.ssObj) {
+      if (!this.spreadsheetObject) {
         return;
       }
-      for (const sheetIndex in this.ssObj.sheets) {
-        const sheet = this.ssObj.sheets[sheetIndex];
+      for (const sheetIndex in this.spreadsheetObject.sheets) {
+        const sheet = this.spreadsheetObject.sheets[sheetIndex];
         const type = _.get(sheet, 'type');
         if (!type) {
           continue;
@@ -142,7 +170,7 @@ export class CustomSpreadsheetComponent {
           headerRanges && Object.keys(headerRanges).map((hr) => ({ value: hr }));
         const headerRangesRow = { cells: headerRangesCellsArray };
 
-        const headerRow = <RowModel>_.get(this.ssObj.sheets[sheetIndex], 'rows.0');
+        const headerRow = <RowModel>_.get(this.spreadsheetObject.sheets[sheetIndex], 'rows.0');
         const data = this.service.getDataByType(type, importedResults);
 
         const formedData = data.map((d) => ({
@@ -159,17 +187,17 @@ export class CustomSpreadsheetComponent {
           sheet.rows = formedData;
         }
       }
-      this.ssObj.refresh();
+      this.spreadsheetObject.refresh();
     };
     reader.readAsText(file);
   }
 
   refresh(): void {
-    this.ssObj?.refresh();
+    this.spreadsheetObject?.refresh();
   }
 
   async saveButtonClick(): Promise<void> {
-    const documentJson = await this.ssObj?.saveAsJson();
+    const documentJson = await this.spreadsheetObject?.saveAsJson();
     const sheetToSave = _.get(documentJson, 'jsonObject.Workbook.sheets', []).find(
       (sheet: SheetSelect) => sheet.name === 'Sheet1'
     );
@@ -184,10 +212,10 @@ export class CustomSpreadsheetComponent {
   }
 
   private async createBaseSheets(results: any = assetsResults): Promise<void> {
-    if (!this.ssObj) {
+    if (!this.spreadsheetObject) {
       return;
     }
-    const baseSheets = this.types.map((type, index) => {
+    const baseSheets: SheetModel[] = this.types.map((type, index) => {
       const data = this.service.getDataByType(type, results);
       const formedData = data.map((d) => ({
         cells: Object.entries(d).map((dField) => ({ value: dField[1] }))
@@ -218,13 +246,13 @@ export class CustomSpreadsheetComponent {
       };
     });
 
-    this.ssObj.hideRibbonTabs(['Home', 'Insert', 'Formulas', 'Data', 'View']);
-    this.ssObj.insertSheet(baseSheets);
-    this.sheets = this.ssObj?.sheets.map((sheet) => <SheetSelect>{ id: sheet.id, name: sheet.name }) || [];
+    this.setInitialValues();
+    this.spreadsheetObject.insertSheet(baseSheets);
+    this.sheets = this.spreadsheetObject?.sheets.map((sheet) => <SheetSelect>{ id: sheet.id, name: sheet.name }) || [];
   }
 
   async onCreate(): Promise<void> {
-    if (!this.ssObj) {
+    if (!this.spreadsheetObject) {
       return;
     }
     await this.createBaseSheets();

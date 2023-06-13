@@ -33,6 +33,7 @@ export class CustomSpreadsheetComponent {
   activeSheetIndex: number = 0;
   selectedSheet: number = 1;
   sheets: SheetSelect[] = [];
+  savedSheets: any;
 
   constructor(private readonly service: SpreadsheetService, private readonly zone: NgZone) {}
 
@@ -95,6 +96,7 @@ export class CustomSpreadsheetComponent {
   }
 
   async processSheetFile(fileInput: any): Promise<void> {
+    // upload report
     const file: File = fileInput.files[0];
     const reader = new FileReader();
 
@@ -121,33 +123,60 @@ export class CustomSpreadsheetComponent {
   }
 
   async processAddXlsx(fileInput: any): Promise<void> {
+    if (!this.spreadsheetObject) {
+      return;
+    }
     const file: File = fileInput.files[0];
+    const documentJson = await this.spreadsheetObject?.saveAsJson();
+    const sheetToSave = _.get(documentJson, 'jsonObject.Workbook.sheets', []);
+    // this.spreadsheetObject?.openFromJson
+    this.savedSheets = sheetToSave;
     const reader = new FileReader();
 
-    reader.onload = (ev: ProgressEvent<FileReader>) => {
-      const workbook = XLSX.read(reader.result, { type: 'binary' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const data: Object[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+    this.spreadsheetObject.open({ file: file });
+    // this.spreadsheetObject.openComplete = () => {
+    //   console.log('Документ открыт!');
+    //   // здесь можно производить дополнительные действия после открытия документа
+    // };
+    // this.spreadsheetObject?.after;
 
-      if (data.length > 0) {
-        const cols = Object.keys(data[0]).map((key) => ({ value: key }));
-        const headerRow = { cells: cols };
+    // reader.onload = (ev: ProgressEvent<FileReader>) => {
+    //   const workbook = XLSX.read(reader.result, { type: 'binary', cellFormula: true, raw: true });
+    //   console.log('workbook', workbook);
 
-        const formedData = data.map((d) => ({
-          cells: Object.entries(d).map((dField) => ({ value: dField[1] }))
-        }));
+    //   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-        this.spreadsheetObject?.insertSheet([
-          {
-            name: 'imported',
-            index: 0,
-            rows: [headerRow, ...formedData]
-          }
-        ]);
-      }
-    };
+    //   const data: Object[] = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+    //   const data1: Object[] = XLSX.utils.sheet_to_formulae(worksheet);
+    //   console.log('data', data, data1);
 
-    reader.readAsArrayBuffer(file);
+    //   if (data.length > 0) {
+    //     const cols = Object.keys(data[0]).map((key) => ({ value: key }));
+    //     console.log('cols', cols);
+
+    //     const headerRow = { cells: cols };
+
+    //     const formedData = data.map((d) => ({
+    //       cells: Object.entries(d).map((dField) => {
+    //         console.log('dField', dField);
+
+    //         return { value: dField[1] };
+    //       })
+    //     }));
+    //     console.log('formedData', formedData);
+
+    //     const sheet = {
+    //       name: 'imported',
+    //       index: 0,
+    //       rows: [headerRow, ...formedData]
+    //     };
+    //     console.log('sheet', sheet);
+
+    //     this.spreadsheetObject?.insertSheet([sheet]);
+    //   }
+    // };
+
+    // reader.readAsArrayBuffer(file);
   }
 
   async processFile(fileInput: any): Promise<void> {
@@ -197,6 +226,7 @@ export class CustomSpreadsheetComponent {
   }
 
   async saveButtonClick(): Promise<void> {
+    // save report
     const documentJson = await this.spreadsheetObject?.saveAsJson();
     const sheetToSave = _.get(documentJson, 'jsonObject.Workbook.sheets', []).find(
       (sheet: SheetSelect) => sheet.name === 'Sheet1'
@@ -249,6 +279,16 @@ export class CustomSpreadsheetComponent {
     this.setInitialValues();
     this.spreadsheetObject.insertSheet(baseSheets);
     this.sheets = this.spreadsheetObject?.sheets.map((sheet) => <SheetSelect>{ id: sheet.id, name: sheet.name }) || [];
+  }
+
+  onOpen(): void {
+    setTimeout(() => {
+      if (!this.savedSheets) {
+        return;
+      }
+      this.spreadsheetObject?.insertSheet(this.savedSheets);
+      this.spreadsheetObject?.refresh();
+    });
   }
 
   async onCreate(): Promise<void> {
